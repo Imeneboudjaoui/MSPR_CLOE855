@@ -24,16 +24,17 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-              cd $HOME/www/
-              repo_name=$(basename "${{ github.repository }}")
-              git clone https://github.com/${{ github.repository }}.git
-              if [ "$(ls -A ./flask)" ]; then
-                rsync -r "./$repo_name/" "./flask/"
-                rm -rf "./$repo_name"
-              else
-                echo "Le répertoire flask de destination sur votre serveur n'existe pas"
-                exit 1
-              fi
+            last_directory=$(basename ${{ runner.workspace }})
+            cd $HOME/www/
+            git clone https://github.com/${{ github.repository }}.git
+            # Vérifier si le répertoire de destination existe
+            if [ "$(ls -A ./flask)" ]; then
+              rsync -r ./$last_directory/ ./flask
+              rm -rf ./$last_directory
+            else
+              echo "Le répertoire flask de destination sur votre serveur n'existe pas"
+              exit 1
+            fi
   Restart:
     needs: Copy
     runs-on: ubuntu-latest
@@ -49,7 +50,7 @@ jobs:
             exit 1  # Quitter avec un code d'erreur
           elif [ "$response_code" -eq 401 ]; then
             echo "Vous n'avez pas renseigner correctement votre secret ALWAYSDATA_TOKEN"
-            exit 1  # Quitter avec un code d'erreur
+          exit 1  # Quitter avec un code d'erreur
           else
             echo "Échec du redémarrage avec le code de réponse : $response_code"
             exit 1  # Quitter avec un code d'erreur
